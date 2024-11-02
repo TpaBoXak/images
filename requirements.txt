@@ -15,3 +15,5 @@ python-multipart==0.0.16
 redis==5.1.1
 async==0.6.2
 uvicorn==0.30.5
+pytest==8.3.3
+pytest-asyncio==0.24.0
