@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Image Upload and Gallery</title>
+</head>
+<body>
+    <h1>Image Gallery</h1>
+
+    <section>
+        <h2>Upload an Image</h2>
+        <form id="uploadForm" action="/api/images/add" method="post" enctype="multipart/form-data">
+            <label for="file">Choose an image:</label>
+            <input type="file" id="file" name="file" accept="image/*" required>
+            <button type="submit">Upload</button>
+        </form>
+    </section>
+
+    <section>
+        <h2>All Images</h2>
+        <div id="gallery"></div>
+    </section>
+
+    <script>
+        async function fetchData() {
+            const token = localStorage.getItem('access_token');
+            if (!token) {
+                window.location.href = '/login';
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/images/all', {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                    }
+                });
+                const images = await response.json();
+
+                const gallery = document.getElementById('gallery');
+                gallery.innerHTML = '';
+
+                images.forEach(image => {
+                    const container = document.createElement('div');
+                    container.style.marginBottom = '20px';
+
+                    const imgElement = document.createElement('img');
+                    imgElement.src = image.file;
+                    imgElement.alt = image.title || 'Uploaded image';
+                    imgElement.style.display = 'block';
+                    imgElement.style.width = '200px';
+
+                    const titleInput = document.createElement('input');
+                    titleInput.type = 'text';
+                    titleInput.value = image.title || 'Untitled';
+                    titleInput.style.marginTop = '10px';
+                    titleInput.style.width = '200px';
+
+                    const saveButton = document.createElement('button');
+                    saveButton.innerText = 'Save Title';
+                    saveButton.style.marginRight = '10px';
+                    saveButton.onclick = async () => {
+                        await updateTitle(image.id, titleInput.value);
+                    };
+
+                    const deleteButton = document.createElement('button');
+                    deleteButton.innerText = 'Delete';
+                    deleteButton.onclick = async () => {
+                        await deleteImage(image.id);
+                    };
+
+                    container.appendChild(imgElement);
+                    container.appendChild(titleInput);
+                    container.appendChild(saveButton);
+                    container.appendChild(deleteButton);
+                    gallery.appendChild(container);
+                });
+            } catch (error) {
+                console.error('Error loading images:', error);
+            }
+        }
+
+        async function updateTitle(id, newTitle) {
+            const token = localStorage.getItem('access_token');
+            if (!token) {
+                window.location.href = '/login';
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/images/update', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        id: id,
+                        new_title: newTitle
+                    })
+                });
+
+                if (response.ok) {
+                    alert('Title updated successfully!');
+                    fetchData();
+                } else {
+                    alert('Failed to update title');
+                }
+            } catch (error) {
+                console.error('Error updating title:', error);
+            }
+        }
+
+        async function deleteImage(id) {
+            const token = localStorage.getItem('access_token');
+            if (!token) {
+                window.location.href = '/login';
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/images/delete/${id}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                if (response.ok) {
+                    alert('Image deleted successfully!');
+                    fetchData();
+                } else {
+                    alert('Failed to delete image');
+                }
+            } catch (error) {
+                console.error('Error deleting image:', error);
+            }
+        }
+
+        document.getElementById('uploadForm').addEventListener('submit', async function(event) {
+            event.preventDefault();
+            const formData = new FormData(this);
+
+            const token = localStorage.getItem('access_token');
+            if (!token) {
+                window.location.href = '/login';
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/images/add', {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                    }
+                });
+
+                if (response.ok) {
+                    alert('Image uploaded successfully!');
+                    fetchData();
+                } else {
+                    alert('Failed to upload image');
+                }
+            } catch (error) {
+                console.error('Error uploading image:', error);
+            }
+        });
+
+        window.onload = fetchData;
+    </script>
+</body>
+</html>

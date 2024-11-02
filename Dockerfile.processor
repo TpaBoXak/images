@@ -1,0 +1,16 @@
+FROM python:3.11-slim
+
+WORKDIR /app
+
+COPY ./requirements.txt /app
+
+RUN pip install --no-cache-dir -r /app/requirements.txt
+
+COPY ./image_processor_service.py /app
+COPY ./img_service_config.py /app
+
+RUN echo "RABBITMQ_URL=amqp://user:password@rabbitmq:5672" > /app/.env.service && \
+    echo "IMAGES_FOLDER=/app/static" >> /app/.env.service && \
+    echo "LOG_LEVEL=INFO" >> /app/.env.service
+
+CMD ["python", "image_processor_service.py"]
